@@ -642,10 +642,20 @@ impl ArrayObject {
 
     /// Try to destroy an `ArrayObject`. Can fail - if it does, returns the CUDA error and the
     /// un-destroyed array object
-    pub fn drop(array: ArrayObject) -> DropResult<ArrayObject> {
-        match unsafe { cuda_driver_sys::cuArrayDestroy(array.handle) }.to_result() {
-            Ok(()) => Ok(()),
-            Err(e) => Err((e, array)),
+    pub fn drop(mut array: ArrayObject) -> DropResult<ArrayObject> {
+        if array.handle.is_null() {
+            return Ok(());
+        }
+        
+        unsafe {
+            let handle = std::mem::replace(&mut array.handle, core::ptr::null_mut());
+            match cuda_driver_sys::cuArrayDestroy(handle).to_result() {
+                Ok(()) => {
+                    std::mem::forget(array);
+                    Ok(())
+                }
+                Err(e) => Err((e, ArrayObject { handle })),
+            }
         }
     }
 }
@@ -658,9 +668,16 @@ impl std::fmt::Debug for ArrayObject {
 
 impl Drop for ArrayObject {
     fn drop(&mut self) {
-        unsafe { cuda_driver_sys::cuArrayDestroy(self.handle) }
-            .to_result()
-            .expect("Failed to destroy CUDA Array")
+        if self.handle.is_null() {
+            return;
+        }
+
+        unsafe {
+            let handle = std::mem::replace(&mut self.handle, core::ptr::null_mut());
+            cuda_driver_sys::cuArrayDestroy(handle)
+                .to_result()
+                .expect("Failed to destroy CUDA Array")
+        }
     }
 }
 

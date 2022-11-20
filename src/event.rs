@@ -335,9 +335,16 @@ impl Event {
 
 impl Drop for Event {
     fn drop(&mut self) {
-        unsafe { cuEventDestroy_v2(self.0) }
-            .to_result()
-            .expect("Failed to destroy CUDA event");
+        if self.0.is_null() {
+            return;
+        }
+
+        unsafe {
+            let inner = mem::replace(&mut self.0, ptr::null_mut());
+            cuEventDestroy_v2(inner)
+                .to_result()
+                .expect("Failed to destroy CUDA event");
+        }
     }
 }
 

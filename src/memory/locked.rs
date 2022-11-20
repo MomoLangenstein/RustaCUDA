@@ -197,8 +197,8 @@ impl<T> LockedBox<T> {
             return Ok(());
         }
 
-        let ptr = mem::replace(&mut locked_box.ptr, core::ptr::null_mut());
         unsafe {
+            let ptr = mem::replace(&mut locked_box.ptr, core::ptr::null_mut());
             match cuda_free_locked(ptr) {
                 Ok(()) => {
                     mem::forget(locked_box);
@@ -215,9 +215,9 @@ impl<T> Drop for LockedBox<T> {
             return;
         }
 
-        let ptr = mem::replace(&mut self.ptr, core::ptr::null_mut());
         // No choice but to panic if this fails.
         unsafe {
+            let ptr = mem::replace(&mut self.ptr, core::ptr::null_mut());
             cuda_free_locked(ptr).expect("Failed to deallocate CUDA memory.");
         }
     }
@@ -553,8 +553,9 @@ impl<T: DeviceCopy> Drop for LockedBuffer<T> {
 
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
+            let ptr = mem::replace(&mut self.buf, ptr::null_mut());
             unsafe {
-                cuda_free_locked(self.buf).expect("Failed to deallocate CUDA page-locked memory.");
+                cuda_free_locked(ptr).expect("Failed to deallocate CUDA page-locked memory.");
             }
         }
         self.capacity = 0;

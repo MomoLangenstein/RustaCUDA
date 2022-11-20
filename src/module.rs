@@ -215,6 +215,7 @@ impl Drop for Module {
         if self.inner.is_null() {
             return;
         }
+        
         unsafe {
             // No choice but to panic if this fails...
             let module = mem::replace(&mut self.inner, ptr::null_mut());
