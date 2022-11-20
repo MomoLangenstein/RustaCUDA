@@ -253,7 +253,7 @@ impl Stream {
     /// # Ok(())
     /// }
     /// ```
-    pub fn wait_event(&self, event: Event, flags: StreamWaitEventFlags) -> CudaResult<()> {
+    pub fn wait_event(&self, event: &Event, flags: StreamWaitEventFlags) -> CudaResult<()> {
         unsafe {
             cuda_driver_sys::cuStreamWaitEvent(self.inner, event.as_inner(), flags.bits())
                 .to_result()
